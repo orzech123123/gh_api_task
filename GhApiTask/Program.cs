@@ -1,14 +1,14 @@
 ﻿using CommandLine;
 using CSharpFunctionalExtensions;
 using GhApiTask.Clients;
-using Microsoft.Data.Sqlite;
+using GhApiTask.Database;
+using GhApiTask.Database.Records;
+using Microsoft.EntityFrameworkCore;
 
 namespace GhApiTask
 {
     public class Program
     {
-        private const string DbName = "commits.db";
-
         public static async Task Main(string[] args)
         {
             await Parser.Default.ParseArguments<Options>(args)
@@ -18,7 +18,7 @@ namespace GhApiTask
 
                         await githubApiClient.GetCommitsAsync(options.Username, options.Repository)
                             .Tap(commits => PrintCommits(options.Repository, commits))
-                            .Tap(commits => SaveCommits(options.Username, options.Repository, commits))
+                            .Tap(commits => SaveCommitsAsync(options.Username, options.Repository, commits))
                             .TapError(error => Console.WriteLine($"Error: {error}"));
                     },
                     _ => Task.FromResult(0));
@@ -33,24 +33,32 @@ namespace GhApiTask
             }
         }
 
-        private static void SaveCommits(string username, string repository, IEnumerable<GithubCommitResponse> commits)
+        private static async Task SaveCommitsAsync(string username, string repository, IEnumerable<GithubCommitResponse> commits)
         {
-            CreateDbIfNotExist(DbName);
+            var databaseContext = new DatabaseContext();
 
-            // using var connection = new SqliteConnection($"Data Source={DbName}");
-            // connection.Open();
-            //
+            var existingShas = await databaseContext.Commits
+                .Select(c => c.Sha)
+                .ToListAsync();
 
-        }
-
-        private static void CreateDbIfNotExist(string databaseFileName)
-        {
-            if (File.Exists(databaseFileName))
+            foreach (var commit in commits)
             {
-                return;
+                if (existingShas.Any(sha => sha == commit.Sha))
+                {
+                    continue;
+                }
+
+                databaseContext.Commits.Add(new CommitRecord
+                {
+                    Username = username,
+                    Repository = repository,
+                    Sha = commit.Sha,
+                    Commiter = commit.Commiter,
+                    Message = commit.Commit.Message
+                });
             }
 
-            File.WriteAllBytes(databaseFileName, Array.Empty<byte>());
+            await databaseContext.SaveChangesAsync();
         }
     }
 }
