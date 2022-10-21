@@ -15,13 +15,6 @@ namespace GhApiTask.Database
             optionsBuilder.UseSqlite(@"DataSource=github.db;");
         }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<CommitRecord>().Property(c => c.Commiter).IsRequired(false);
-
-            base.OnModelCreating(modelBuilder);
-        }
-
         public DbSet<CommitRecord> Commits { get; set; }
     }
 }

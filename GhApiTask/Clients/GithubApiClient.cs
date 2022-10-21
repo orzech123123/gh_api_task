@@ -34,12 +34,17 @@ namespace GhApiTask.Clients
     public class GithubCommitResponse
     {
         public string Sha { get; set; }
-        public string Commiter { get; set; }
         public CommitResponse Commit { get; set; }
     }
 
     public class CommitResponse
     {
         public string Message { get; set; }
+        public CommitterResponse Committer { get; set; }
+    }
+
+    public class CommitterResponse
+    {
+        public string Email { get; set; }
     }
 }

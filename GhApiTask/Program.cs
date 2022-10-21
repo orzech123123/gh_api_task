@@ -29,7 +29,7 @@ namespace GhApiTask
             Console.WriteLine("Commits:");
             foreach (var commit in commits)
             {
-                Console.WriteLine($"[{repository}]/[{commit.Sha}]: {commit.Commit.Message} [{commit.Commiter}]");
+                Console.WriteLine($"[{repository}]/[{commit.Sha}]: {commit.Commit.Message} [{commit.Commit.Committer.Email}]");
             }
         }
 
@@ -53,7 +53,7 @@ namespace GhApiTask
                     Username = username,
                     Repository = repository,
                     Sha = commit.Sha,
-                    Commiter = commit.Commiter,
+                    Commiter = commit.Commit.Committer.Email,
                     Message = commit.Commit.Message
                 });
             }
